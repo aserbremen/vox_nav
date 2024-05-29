@@ -65,6 +65,8 @@ set(dependencies
     LIBFCL
     vision_msgs)
 
+set(OMPL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../../install/ompl/include/ompl-1.6")
+
 add_executable(vox_nav_controller_server src/controller_server.cpp)
 target_include_directories(vox_nav_controller_server PUBLIC include ${OMPL_INCLUDE_DIRS})
 ament_target_dependencies(vox_nav_controller_server ${dependencies})

@@ -38,6 +38,10 @@ find_package(visualization_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(vox_nav_msgs REQUIRED)
 
+# set(OMPL_INCLUDE_DIRS /home/serov/code/cpp/vox_nav/install/ompl/include/ompl-1.6)
+message(WARNING "CMAKE_SOURCE_DIR = ${CMAKE_SOURCE_DIR}")
+set(OMPL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../../install/ompl/include/ompl-1.6")
+
 include_directories(include
                    ${OMPL_INCLUDE_DIRS}
                    ${PCL_INCLUDE_DIRS}

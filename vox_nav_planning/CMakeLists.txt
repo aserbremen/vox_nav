@@ -45,6 +45,7 @@ find_package(vox_nav_utilities REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
+set(OMPL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../../install/ompl/include/ompl-1.6")
 include_directories(include
                    ${OMPL_INCLUDE_DIRS})
                    

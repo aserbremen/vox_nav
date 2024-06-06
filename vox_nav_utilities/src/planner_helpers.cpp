@@ -364,11 +364,11 @@ void publishPlan(const std::vector<geometry_msgs::msg::PoseStamped>& path,
 
     marker_array.markers.push_back(text);
 
-    /*geometry_msgs::msg::PoseStamped mutable_pose = i;
+    geometry_msgs::msg::PoseStamped mutable_pose = i;
     mutable_pose.header.frame_id = "map";
     mutable_pose.header.stamp = rclcpp::Clock().now();
     nav_msgs_path.poses.push_back(mutable_pose);
-    nav_msgs_path.header = mutable_pose.header;*/
+    nav_msgs_path.header = mutable_pose.header;
   }
   // Publish goal and start states for debuging
   start_marker.pose = start_pose.pose;

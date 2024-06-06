@@ -139,7 +139,8 @@ ControllerServer::ControllerServer()
 
   global_path_ = std::make_shared<nav_msgs::msg::Path>();
 
-  path_refiner_thread_ = std::make_shared<std::thread>(std::thread(&ControllerServer::executePathRefinerThread, this));
+  // Comment this out for now
+  // path_refiner_thread_ = std::make_shared<std::thread>(std::thread(&ControllerServer::executePathRefinerThread, this));
 
   RCLCPP_INFO(get_logger(), "Constructed control server ... ");
 }

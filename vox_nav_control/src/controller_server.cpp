@@ -271,13 +271,25 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
   geometry_msgs::msg::PoseStamped initial_robot_pose;
   vox_nav_utilities::getCurrentPose(initial_robot_pose, *tf_buffer_, "odom", "base_link", transform_timeout_);
   global_path_ = std::make_shared<nav_msgs::msg::Path>();
-  global_path_->header = goal->path.header;
+  geometry_msgs::msg::PoseStamped goal_to_odom_pose;
+  if (goal->path.header.frame_id != "odom") {
+    vox_nav_utilities::getCurrentPose(goal_to_odom_pose, *tf_buffer_, "odom", goal->path.header.frame_id, transform_timeout_);
+  }
+  global_path_->header.stamp = goal->path.header.stamp;
+  global_path_->header.frame_id = "odom";
   initial_robot_pose.pose.position.z = goal->path.poses.front().pose.position.z;
-  global_path_->poses.push_back(initial_robot_pose);
 
+  global_path_->poses.push_back(initial_robot_pose);
   for (auto&& i : goal->path.poses)
   {
-    global_path_->poses.push_back(i);
+    geometry_msgs::msg::PoseStamped pose_in_odom = i;
+    if (goal->path.header.frame_id != "odom")
+    {
+      // allow big time difference (assuming no movement happens during planning and execution of the path)
+      rclcpp::Duration max_transform_difference = rclcpp::Duration(std::numeric_limits<int32_t>::max(), 0);
+      vox_nav_utilities::transformPose(tf_buffer_, "odom", i, pose_in_odom, max_transform_difference);
+    }
+    global_path_->poses.push_back(pose_in_odom);
   }
 
   geometry_msgs::msg::Twist computed_velocity_commands;
@@ -310,6 +322,10 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
 
     geometry_msgs::msg::PoseStamped curr_robot_pose;
     vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, "odom", "base_link", transform_timeout_);
+
+    RCLCPP_INFO_STREAM_THROTTLE(get_logger(), clock, 1000, "current robot pose: " << curr_robot_pose.pose.position.x << " "
+                                                             << curr_robot_pose.pose.position.y << " "
+                                                             << curr_robot_pose.pose.position.z);
 
     int nearest_traj_pose_index = vox_nav_control::common::nearestStateIndex(*global_path_, curr_robot_pose);
     curr_robot_pose.pose.position.z = global_path_->poses[nearest_traj_pose_index].pose.position.z;
@@ -381,7 +397,7 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
 
     // Print the Loop Rate once in a while
     RCLCPP_INFO_THROTTLE(get_logger(), clock,
-                         2000,  // ms
+                         10000,  // ms
                          "Average Current Control loop rate is %.4f Hz",
                          1.0 / (average_time_taken_by_controller_loop / control_cycles));
 
@@ -395,8 +411,8 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
     auto cycle_duration = steady_clock_.now() - loop_start_time;
     if (controller_duration_ && cycle_duration.seconds() > controller_duration_)
     {
-      RCLCPP_WARN(get_logger(), "Contol loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-                  1 / controller_duration_, 1 / cycle_duration.seconds());
+      RCLCPP_WARN_THROTTLE(get_logger(), clock, 10000, "Contol loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+                           1 / controller_duration_, 1 / cycle_duration.seconds());
     }
 
     rate.sleep();

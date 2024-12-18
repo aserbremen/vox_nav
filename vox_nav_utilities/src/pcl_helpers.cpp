@@ -68,13 +68,15 @@ namespace vox_nav_utilities
     return cloud;
   }
 
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointcloudFromPcdPointXYZI(const std::string &filename) {
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointcloudFromPcdPointXYZI(const std::string &filename)
+  {
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZI>());
     pcl::io::loadPCDFile(filename, *cloud);
-    
+
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_rgb(new pcl::PointCloud<pcl::PointXYZRGB>());
     cloud_rgb->points.reserve(cloud->points.size());
-    for (size_t i = 0; i < cloud->points.size(); i++) {
+    for (size_t i = 0; i < cloud->points.size(); i++)
+    {
       const pcl::PointXYZI &point = cloud->points[i];
       pcl::PointXYZRGB point_rgb;
       point_rgb.x = point.x;
@@ -86,6 +88,25 @@ namespace vox_nav_utilities
       cloud_rgb->push_back(point_rgb);
     }
     return cloud_rgb;
+  }
+
+  void PointcloudXYZIToXYZRGB(
+      const pcl::PointCloud<pcl::PointXYZI>::Ptr &input_cloud,
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr &output_cloud)
+  {
+    output_cloud->points.reserve(input_cloud->points.size());
+    for (size_t i = 0; i < input_cloud->points.size(); i++)
+    {
+      const pcl::PointXYZI &point = input_cloud->points[i];
+      pcl::PointXYZRGB point_rgb;
+      point_rgb.x = point.x;
+      point_rgb.y = point.y;
+      point_rgb.z = point.z;
+      point_rgb.r = 0.0;
+      point_rgb.g = 0.0;
+      point_rgb.b = 0.0;
+      output_cloud->push_back(point_rgb);
+    }
   }
 
   std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> extractClusterCloudsFromPointcloud(

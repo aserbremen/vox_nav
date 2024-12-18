@@ -65,7 +65,7 @@ InteractiveMapManager::InteractiveMapManager(const rclcpp::NodeOptions& options)
       declare_parameter("remove_outlier_min_neighbors_in_radius", 1);
 
   pointcloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-      pointcloud_topic_, rclcpp::SystemDefaultsQoS(),
+      pointcloud_topic_, rclcpp::QoS(10),
       std::bind(&InteractiveMapManager::pointcloudCallback, this, std::placeholders::_1));
 
   // service hooks for get maps and surfels
@@ -74,23 +74,23 @@ InteractiveMapManager::InteractiveMapManager(const rclcpp::NodeOptions& options)
       std::bind(&InteractiveMapManager::getGetTraversabilityMapCallback, this, std::placeholders::_1,
                 std::placeholders::_2, std::placeholders::_3));
 
-  octomap_pointloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-      octomap_point_cloud_publish_topic_, rclcpp::SystemDefaultsQoS());
+  octomap_pointloud_publisher_ =
+      this->create_publisher<sensor_msgs::msg::PointCloud2>(octomap_point_cloud_publish_topic_, 10);
 
   elevated_surfel_pcl_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-      "vox_nav/map_server/elevated_surfel_pointcloud", rclcpp::SystemDefaultsQoS());
+      "vox_nav/map_server/elevated_surfel_pointcloud", rclcpp::QoS(10));
 
-  traversable_pointcloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-      traversable_pointcloud_publish_topic_, rclcpp::SystemDefaultsQoS());
+  traversable_pointcloud_publisher_ =
+      this->create_publisher<sensor_msgs::msg::PointCloud2>(traversable_pointcloud_publish_topic_, rclcpp::QoS(10));
 
-  non_traversable_pointcloud_publisher_ = this->create_publisher<sensor_msgs::msg::PointCloud2>(
-      non_traversable_pointcloud_publish_topic_, rclcpp::SystemDefaultsQoS());
+  non_traversable_pointcloud_publisher_ =
+      this->create_publisher<sensor_msgs::msg::PointCloud2>(non_traversable_pointcloud_publish_topic_, rclcpp::QoS(10));
 
-  octomap_markers_publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      octomap_markers_publish_topic_, rclcpp::SystemDefaultsQoS());
+  octomap_markers_publisher_ =
+      this->create_publisher<visualization_msgs::msg::MarkerArray>(octomap_markers_publish_topic_, rclcpp::QoS(10));
 
   elevated_surfel_octomap_markers_publisher_ = this->create_publisher<visualization_msgs::msg::MarkerArray>(
-      "vox_nav/map_server/elevated_surfel_markers", rclcpp::SystemDefaultsQoS());
+      "vox_nav/map_server/elevated_surfel_markers", rclcpp::QoS(10));
 }
 
 InteractiveMapManager::~InteractiveMapManager() {
@@ -98,14 +98,18 @@ InteractiveMapManager::~InteractiveMapManager() {
 }
 
 void InteractiveMapManager::pointcloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
+  pcl::PointCloud<pcl::PointXYZI>::Ptr pointcloud_tmp(new pcl::PointCloud<pcl::PointXYZI>);
+
   // convert to pcl pointcloud
-  pcl::fromROSMsg(*msg, *pointcloud_);
+  pcl::fromROSMsg(*msg, *pointcloud_tmp);
+  vox_nav_utilities::PointcloudXYZIToXYZRGB(pointcloud_tmp, pointcloud_);
 
   RCLCPP_INFO_STREAM(get_logger(), "Received a pointcloud message with " << pointcloud_->points.size()
                                                                          << " points, calculating traversability map");
 
   preProcessPCDMap();
   regressCosts();
+  handleOriginalOctomap();
   publishMapVisuals();
 }
 

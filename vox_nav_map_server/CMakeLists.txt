@@ -28,6 +28,7 @@ find_package(rviz_default_plugins REQUIRED)
 
 set(dependencies
 rclcpp
+rclcpp_components
 rclcpp_action
 visualization_msgs
 geometry_msgs
@@ -56,9 +57,26 @@ ament_target_dependencies(osm_map_manager ${dependencies})
 add_executable(map_manager_no_gps src/map_manager_no_gps.cpp)
 ament_target_dependencies(map_manager_no_gps ${dependencies})
 
+add_library(interactive_map_manager_component SHARED src/interactive_map_manager.cpp)
+ament_target_dependencies(interactive_map_manager_component ${dependencies})
+rclcpp_components_register_nodes(interactive_map_manager_component "vox_nav_map_server::InteractiveMapManager")
+
+add_executable(interactive_map_manager_node src/interactive_map_manager_node.cpp)
+ament_target_dependencies(interactive_map_manager_node ${dependencies})
+target_link_libraries(interactive_map_manager_node interactive_map_manager_component)
+
+# install components
+install(TARGETS interactive_map_manager_component
+  EXPORT inter_active_map_manager_component
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
 install(TARGETS map_manager
                 map_manager_no_gps
                 osm_map_manager  
+                interactive_map_manager_node
         RUNTIME DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY include/

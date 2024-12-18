@@ -48,6 +48,7 @@ namespace vox_nav_map_server {
  */
 class InteractiveMapManager : public rclcpp::Node {
  public:
+  using PointType = pcl::PointXYZRGB;
   // the following structs can be used somewhere general in order to avoid duplicate code
   struct PCDPreProcessingParams {
     double pcd_map_downsample_voxel_size;
@@ -91,13 +92,74 @@ class InteractiveMapManager : public rclcpp::Node {
           cost_critic_weights({0.33, 0.33, 0.33}) {}
   };
 
-  InteractiveMapManager(const rclcpp::NodeOptions& options = rclcpp::NodeOptions());
+  /**
+   * @brief Construct a new Interactive Map Manager object
+   *
+   * @param options rclcpp::NodeOptions needed to register a component with ROS2
+   */
+  InteractiveMapManager(const rclcpp::NodeOptions& options = rclcpp::NodeOptions().use_intra_process_comms(true));
+
+  ~InteractiveMapManager();
+
+  /**
+   * @brief Callback function for point cloud subscription
+   *
+   * @param msg Point cloud message
+   */
+  void pointcloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg);
+
+  /**
+   * @brief Given preprocessed and cost regressed point cloud of PCD Map
+   * this methed, constructs an octomap from this point cloud.
+   * Markers representing Octomap are also filled within this function
+   *
+   */
+  void handleOriginalOctomap();
+
+  /**
+   * @brief Given preprocessed(denoise, rigid body trans. etc.) point cloud,
+   * regresses costs to original point cloud based on features extracted from surfels
+   * These are also know as cost critics.
+   * e.g, tilt, max energy differnece, average point deviation from surfel plane etc.
+   *
+   */
+  void regressCosts();
+
+  /**
+   * @brief once map is georefenced, this function
+   *  is called from timerCallback to publish map related visuals
+   *  e.g point cloud, octomap markers etc
+   *
+   */
+  void publishMapVisuals();
+
+  /**
+   * @brief It is possible to apply some preprocessing steps to original PCD map.
+   * Noise removal , downsampling , rigid body transfroms etc.
+   * Look at the params.yaml for filter related paramaters
+   *
+   */
+  void preProcessPCDMap();
+
+  /**
+   * @brief Get the Get Maps And Surfels Callback object, Service callback to
+   * provide maps and surfels managed and cnfigured by this node
+   *
+   * @param request_header
+   * @param request
+   * @param response
+   */
+  void getGetTraversabilityMapCallback(const std::shared_ptr<rmw_request_id_t> request_header,
+                                       const std::shared_ptr<vox_nav_msgs::srv::GetTraversabilityMap::Request> request,
+                                       std::shared_ptr<vox_nav_msgs::srv::GetTraversabilityMap::Response> response);
 
  private:
-  // point cloud sub
+  // point cloud sub, we listen to this point cloud to create the traversability map
   std::string pointcloud_topic_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
 
+  // Service to provide Octomap, elevated surfel and elevated surfel poses
+  rclcpp::Service<vox_nav_msgs::srv::GetTraversabilityMap>::SharedPtr get_traversability_map_service_;
   // publishes octomap in form of a point cloud message
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr octomap_pointloud_publisher_;
   // publishes octomap in form of a point cloud message
@@ -139,7 +201,7 @@ class InteractiveMapManager : public rclcpp::Node {
   // rclcpp parameters from yaml file: full path to octomap file in disk
   // std::string pcd_map_filename_; // not needed
   // Pointcloud map is stroed here
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcd_map_pointcloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointcloud_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pure_traversable_pointcloud_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pure_non_traversable_pointcloud_;
 

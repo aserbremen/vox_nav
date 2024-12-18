@@ -139,6 +139,14 @@ namespace vox_nav_utilities
     const std::string & filename,
     bool label);
 
+  /**
+   * @brief Load a point cloud from a PCD file and convert to the appropriate point type
+   *
+   * @param filename
+   * @return pcl::PointCloud<pcl::PointXYZRGB>::Ptr
+   */
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr loadPointcloudFromPcdPointXYZI(const std::string &filename);
+
   /*!
    * Finds clusters in the input cloud and returns vector point clouds.
    * Each pointcloud in the vector is a cluster in the input cloud.

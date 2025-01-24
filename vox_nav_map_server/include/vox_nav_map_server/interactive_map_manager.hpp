@@ -100,15 +100,6 @@ class InteractiveMapManager : public rclcpp::Node {
    */
   InteractiveMapManager(const rclcpp::NodeOptions& options = rclcpp::NodeOptions().use_intra_process_comms(true));
 
-  /**
-   * @brief Update params which were updated via command line, e.g. ros2 params set ...
-   *
-   * @param request Trigger request
-   * @param response Trigger response
-   */
-  void updateParams(std_srvs::srv::Trigger::Request::SharedPtr request,
-                    std_srvs::srv::Trigger::Response::SharedPtr response);
-
   ~InteractiveMapManager();
 
   /**
@@ -152,6 +143,24 @@ class InteractiveMapManager : public rclcpp::Node {
   void preProcessPCDMap();
 
   /**
+   * @brief Update params which were updated via command line, e.g. ros2 params set ...
+   *
+   * @param request Trigger request
+   * @param response Trigger response
+   */
+  void updateParams(std_srvs::srv::Trigger::Request::SharedPtr request,
+                    std_srvs::srv::Trigger::Response::SharedPtr response);
+
+  /**
+   * @brief Recalculate costs and publish map visuals
+   *
+   * @param request Trigger request (empty)
+   * @param response Trigger response (success, message)
+   */
+  void recalculateCosts(std_srvs::srv::Trigger::Request::SharedPtr request,
+                        std_srvs::srv::Trigger::Response::SharedPtr response);
+
+  /**
    * @brief Get the Get Maps And Surfels Callback object, Service callback to
    * provide maps and surfels managed and cnfigured by this node
    *
@@ -170,6 +179,8 @@ class InteractiveMapManager : public rclcpp::Node {
 
   // Service to update params which were updated via command line
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr update_params_service_;
+  // Service to recalculate costs and publish map visuals
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr recalculate_costs_service_;
   // Service to provide Octomap, elevated surfel and elevated surfel poses
   rclcpp::Service<vox_nav_msgs::srv::GetTraversabilityMap>::SharedPtr get_traversability_map_service_;
   // publishes octomap in form of a point cloud message
@@ -210,10 +221,9 @@ class InteractiveMapManager : public rclcpp::Node {
   // elevated_surfel_poses_msg_
   geometry_msgs::msg::PoseArray::SharedPtr elevated_surfel_poses_msg_;
   // otree object to read and store binary octomap from disk
-  // rclcpp parameters from yaml file: full path to octomap file in disk
-  // std::string pcd_map_filename_; // not needed
   // Pointcloud map is stroed here
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointcloud_;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr preprocessed_pointcloud_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pure_traversable_pointcloud_;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr pure_non_traversable_pointcloud_;
 

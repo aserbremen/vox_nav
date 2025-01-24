@@ -54,7 +54,7 @@ InteractiveMapManager::InteractiveMapManager(const rclcpp::NodeOptions& options)
   cost_params_.plane_fit_threshold = declare_parameter("plane_fit_threshold", 0.2);
   cost_params_.robot_mass = declare_parameter("robot_mass", 0.1);
   cost_params_.average_speed = declare_parameter("average_speed", 1.0);
-  cost_params_.cost_critic_weights = std::vector<double>({{0.8, 0.1, 0.1}});
+  cost_params_.cost_critic_weights = declare_parameter("cost_critic_weights", std::vector<double>({{0.8, 0.1, 0.1}}));
   // preprocess params
   preprocess_params_.apply_filters = declare_parameter("apply_filters", true);
   preprocess_params_.pcd_map_downsample_voxel_size = declare_parameter("pcd_map_downsample_voxel_size", 0.1);
@@ -69,6 +69,10 @@ InteractiveMapManager::InteractiveMapManager(const rclcpp::NodeOptions& options)
       std::bind(&InteractiveMapManager::pointcloudCallback, this, std::placeholders::_1));
 
   // service hooks for get maps and surfels
+  update_params_service_ = this->create_service<std_srvs::srv::Trigger>(
+      "vox_nav/map_server/update_params",
+      std::bind(&InteractiveMapManager::updateParams, this, std::placeholders::_1, std::placeholders::_2));
+
   get_traversability_map_service_ = this->create_service<vox_nav_msgs::srv::GetTraversabilityMap>(
       std::string("get_traversability_map"),
       std::bind(&InteractiveMapManager::getGetTraversabilityMapCallback, this, std::placeholders::_1,
@@ -95,6 +99,41 @@ InteractiveMapManager::InteractiveMapManager(const rclcpp::NodeOptions& options)
 
 InteractiveMapManager::~InteractiveMapManager() {
   RCLCPP_INFO(this->get_logger(), "Destroying..");
+}
+
+void InteractiveMapManager::updateParams(std_srvs::srv::Trigger::Request::SharedPtr request,
+                                         std_srvs::srv::Trigger::Response::SharedPtr response) {
+  RCLCPP_INFO_STREAM(this->get_logger(), "Updating params..");
+  // map params
+  map_frame_id_ = get_parameter("map_frame_id").as_string();
+  pcd_map_transform_matrix_.translation_.x() = get_parameter("pcd_map_transform.translation.x").as_double();
+  pcd_map_transform_matrix_.translation_.y() = get_parameter("pcd_map_transform.translation.y").as_double();
+  pcd_map_transform_matrix_.translation_.z() = get_parameter("pcd_map_transform.translation.z").as_double();
+  pcd_map_transform_matrix_.rpyIntrinsic_.x() = get_parameter("pcd_map_transform.rotation.r").as_double();
+  pcd_map_transform_matrix_.rpyIntrinsic_.y() = get_parameter("pcd_map_transform.rotation.p").as_double();
+  pcd_map_transform_matrix_.rpyIntrinsic_.z() = get_parameter("pcd_map_transform.rotation.y").as_double();
+  // cost params
+  cost_params_.uniform_sample_radius = get_parameter("uniform_sample_radius").as_double();
+  cost_params_.surfel_radius = get_parameter("surfel_radius").as_double();
+  cost_params_.max_allowed_tilt = get_parameter("max_allowed_tilt").as_double();
+  cost_params_.max_allowed_point_deviation = get_parameter("max_allowed_point_deviation").as_double();
+  cost_params_.max_allowed_energy_gap = get_parameter("max_allowed_energy_gap").as_double();
+  cost_params_.node_elevation_distance = get_parameter("node_elevation_distance").as_double();
+  cost_params_.plane_fit_threshold = get_parameter("plane_fit_threshold").as_double();
+  cost_params_.robot_mass = get_parameter("robot_mass").as_double();
+  cost_params_.average_speed = get_parameter("average_speed").as_double();
+  cost_params_.cost_critic_weights = get_parameter("cost_critic_weights").as_double_array();
+  // preprocess params
+  preprocess_params_.apply_filters = get_parameter("apply_filters").as_bool();
+  preprocess_params_.pcd_map_downsample_voxel_size = get_parameter("pcd_map_downsample_voxel_size").as_double();
+  preprocess_params_.remove_outlier_mean_K = get_parameter("remove_outlier_mean_K").as_int();
+  preprocess_params_.remove_outlier_stddev_threshold = get_parameter("remove_outlier_stddev_threshold").as_double();
+  preprocess_params_.remove_outlier_radius_search = get_parameter("remove_outlier_radius_search").as_double();
+  preprocess_params_.remove_outlier_min_neighbors_in_radius =
+      get_parameter("remove_outlier_min_neighbors_in_radius").as_int();
+
+  response->success = true;
+  response->message = "Params updated";
 }
 
 void InteractiveMapManager::pointcloudCallback(sensor_msgs::msg::PointCloud2::ConstSharedPtr msg) {
@@ -377,6 +416,9 @@ void InteractiveMapManager::publishMapVisuals() {
     non_traversable_pointcloud_msg_->header.frame_id = map_frame_id_;
     non_traversable_pointcloud_msg_->header.stamp = this->now();
 
+    RCLCPP_INFO_STREAM(get_logger(),
+                       "Publishing " << (*pure_traversable_pointcloud_).points.size() << " traversable points and "
+                                     << (*pure_non_traversable_pointcloud_).points.size() << " non-traversable points");
     octomap_pointloud_publisher_->publish(*octomap_pointcloud_msg_);
     octomap_markers_publisher_->publish(*original_octomap_markers_msg_);
     elevated_surfel_octomap_markers_publisher_->publish(*elevated_surfel_octomap_markers_msg_);

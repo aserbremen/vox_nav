@@ -29,6 +29,7 @@
 #include <rclcpp/service.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <string>
 #include <vector>
 #include <visualization_msgs/msg/marker_array.hpp>
@@ -99,6 +100,15 @@ class InteractiveMapManager : public rclcpp::Node {
    */
   InteractiveMapManager(const rclcpp::NodeOptions& options = rclcpp::NodeOptions().use_intra_process_comms(true));
 
+  /**
+   * @brief Update params which were updated via command line, e.g. ros2 params set ...
+   *
+   * @param request Trigger request
+   * @param response Trigger response
+   */
+  void updateParams(std_srvs::srv::Trigger::Request::SharedPtr request,
+                    std_srvs::srv::Trigger::Response::SharedPtr response);
+
   ~InteractiveMapManager();
 
   /**
@@ -158,6 +168,8 @@ class InteractiveMapManager : public rclcpp::Node {
   std::string pointcloud_topic_;
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
 
+  // Service to update params which were updated via command line
+  rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr update_params_service_;
   // Service to provide Octomap, elevated surfel and elevated surfel poses
   rclcpp::Service<vox_nav_msgs::srv::GetTraversabilityMap>::SharedPtr get_traversability_map_service_;
   // publishes octomap in form of a point cloud message

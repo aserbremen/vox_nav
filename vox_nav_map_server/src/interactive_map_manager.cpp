@@ -374,6 +374,8 @@ void InteractiveMapManager::handleOriginalOctomap() {
   } catch (const std::exception& e) {
     RCLCPP_ERROR(get_logger(), "Exception while converting collision binary octomap %s:", e.what());
   }
+
+  map_configured_ = true;
 }
 
 void InteractiveMapManager::publishMapVisuals() {
@@ -437,6 +439,8 @@ void InteractiveMapManager::updateParams(std_srvs::srv::Trigger::Request::Shared
 void InteractiveMapManager::recalculateCosts(std_srvs::srv::Trigger::Request::SharedPtr request,
                                              std_srvs::srv::Trigger::Response::SharedPtr response) {
   RCLCPP_INFO_STREAM(this->get_logger(), "Recalculating costs..");
+
+  map_configured_ = false;
   // updating params in case they were changed
   updateParams(nullptr, std_srvs::srv::Trigger::Response::SharedPtr(new std_srvs::srv::Trigger::Response));
   pcl::copyPointCloud(*preprocessed_pointcloud_, *pointcloud_);

@@ -28,6 +28,22 @@ namespace vox_nav_planning
   {
     RCLCPP_INFO(get_logger(), "Creating");
 
+    map_frame_id_ = declare_parameter("map_frame_id", "map");
+    robot_frame_id_ = declare_parameter("robot_frame_id", "base_link");
+    std::string node_namespace = get_namespace();    
+    RCLCPP_INFO(get_logger(), "Namespace: %s", node_namespace.c_str());
+    if (node_namespace != "") {
+      map_frame_id_ = node_namespace + "/" + map_frame_id_;
+      robot_frame_id_ = node_namespace + "/" + robot_frame_id_;
+      if (map_frame_id_[0] == '/') {
+        map_frame_id_ = map_frame_id_.substr(1);
+      }
+      if (robot_frame_id_[0] == '/') {
+        robot_frame_id_ = robot_frame_id_.substr(1);
+      }
+    }
+    RCLCPP_INFO(get_logger(), "Planning in map frame: %s, robot frame: %s", map_frame_id_.c_str(), robot_frame_id_.c_str());
+
     // Declare this node's parameters
     declare_parameter("expected_planner_frequency", 1.0);
     declare_parameter("planner_plugin", "SE2Planner");
@@ -150,7 +166,7 @@ namespace vox_nav_planning
       goal->pose.pose.position.x, goal->pose.pose.position.y);
 
     geometry_msgs::msg::PoseStamped start_pose, goal_pose;
-    vox_nav_utilities::getCurrentPose(start_pose, *tf_buffer_, "map", "base_link", 0.1);
+    vox_nav_utilities::getCurrentPose(start_pose, *tf_buffer_, map_frame_id_, robot_frame_id_, 0.1);
     goal_pose = goal->pose;
 
     result->path.poses = getPlan(start_pose, goal_pose, planner_id_);

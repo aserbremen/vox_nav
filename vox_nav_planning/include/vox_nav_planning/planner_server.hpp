@@ -120,6 +120,9 @@ namespace vox_nav_planning
     double max_planner_duration_;
     std::string planner_ids_concat_;
     double expected_planner_frequency_;
+    // frames
+    std::string map_frame_id_;
+    std::string robot_frame_id_;
     // Clock
     rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
     // tf buffer to get transfroms

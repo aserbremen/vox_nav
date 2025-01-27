@@ -205,6 +205,8 @@ namespace vox_nav_control
     rclcpp::Clock steady_clock_{RCL_STEADY_TIME};
 
     // tf buffer to get access to transfroms
+    std::string odom_frame_id_;
+    std::string robot_frame_id_;
     std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 

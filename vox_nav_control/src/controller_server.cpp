@@ -120,6 +120,18 @@ ControllerServer::ControllerServer()
       std::bind(&ControllerServer::handle_accepted, this, std::placeholders::_1));
 
   // setup TF buffer and listerner to read transforms
+  odom_frame_id_ = declare_parameter("odom_frame_id", "odom");
+  robot_frame_id_ = declare_parameter("robot_frame_id", "base_link");
+  std::string node_namespace = get_namespace();
+  if (node_namespace[0] == "/")
+  {
+    node_namespace = node_namespace.substr(1);
+  }
+  if (node_namespace.empty())
+  {
+    odom_frame_id_ = node_namespace + "/" + odom_frame_id_;
+    robot_frame_id_ = node_namespace + "/" + robot_frame_id_;
+  }
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -150,7 +162,7 @@ void ControllerServer::executePathRefinerThread()
   while (rclcpp::ok())
   {
     geometry_msgs::msg::PoseStamped curr_robot_pose;
-    vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, "odom", "base_link", transform_timeout_);
+    vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, odom_frame_id_, robot_frame_id_, transform_timeout_);
     if (global_path_->poses.empty())
     {
       continue;
@@ -269,25 +281,25 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
     }
   }
   geometry_msgs::msg::PoseStamped initial_robot_pose;
-  vox_nav_utilities::getCurrentPose(initial_robot_pose, *tf_buffer_, "odom", "base_link", transform_timeout_);
+  vox_nav_utilities::getCurrentPose(initial_robot_pose, *tf_buffer_, odom_frame_id_, robot_frame_id_, transform_timeout_);
   global_path_ = std::make_shared<nav_msgs::msg::Path>();
   geometry_msgs::msg::PoseStamped goal_to_odom_pose;
-  if (goal->path.header.frame_id != "odom") {
-    vox_nav_utilities::getCurrentPose(goal_to_odom_pose, *tf_buffer_, "odom", goal->path.header.frame_id, transform_timeout_);
+  if (goal->path.header.frame_id != odom_frame_id_) { // TODO check if goal header is correctly set
+    vox_nav_utilities::getCurrentPose(goal_to_odom_pose, *tf_buffer_, odom_frame_id_, goal->path.header.frame_id, transform_timeout_);
   }
   global_path_->header.stamp = goal->path.header.stamp;
-  global_path_->header.frame_id = "odom";
+  global_path_->header.frame_id = odom_frame_id_;
   initial_robot_pose.pose.position.z = goal->path.poses.front().pose.position.z;
 
   global_path_->poses.push_back(initial_robot_pose);
   for (auto&& i : goal->path.poses)
   {
     geometry_msgs::msg::PoseStamped pose_in_odom = i;
-    if (goal->path.header.frame_id != "odom")
+    if (goal->path.header.frame_id != odom_frame_id_)
     {
       // allow big time difference (assuming no movement happens during planning and execution of the path)
       rclcpp::Duration max_transform_difference = rclcpp::Duration(std::numeric_limits<int32_t>::max(), 0);
-      vox_nav_utilities::transformPose(tf_buffer_, "odom", i, pose_in_odom, max_transform_difference);
+      vox_nav_utilities::transformPose(tf_buffer_, odom_frame_id_, i, pose_in_odom, max_transform_difference);
     }
     global_path_->poses.push_back(pose_in_odom);
   }
@@ -321,7 +333,7 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
     }
 
     geometry_msgs::msg::PoseStamped curr_robot_pose;
-    vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, "odom", "base_link", transform_timeout_);
+    vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, odom_frame_id_, robot_frame_id_, transform_timeout_);
 
     RCLCPP_INFO_STREAM_THROTTLE(get_logger(), clock, 1000, "current robot pose: " << curr_robot_pose.pose.position.x << " "
                                                              << curr_robot_pose.pose.position.y << " "
@@ -368,7 +380,7 @@ void ControllerServer::followPath(const std::shared_ptr<GoalHandleFollowPath> go
         cmd_vel_publisher_->publish(computed_velocity_commands);
         goal_handle->publish_feedback(feedback);
 
-        vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, "odom", "base_link", transform_timeout_);
+        vox_nav_utilities::getCurrentPose(curr_robot_pose, *tf_buffer_, odom_frame_id_, robot_frame_id_, transform_timeout_);
 
         double nan, curr_robot_psi, goal_psi;
         vox_nav_utilities::getRPYfromMsgQuaternion(curr_robot_pose.pose.orientation, nan, nan, curr_robot_psi);

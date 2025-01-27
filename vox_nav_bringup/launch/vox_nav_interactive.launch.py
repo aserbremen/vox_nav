@@ -49,11 +49,12 @@ def launch_setup(context, *args, **kwargs):
 
     with open(params_file, 'r') as f:
         params = yaml.safe_load(f)
-        print(yaml.dump(params, default_flow_style=False, sort_keys=False))
+        # print(yaml.dump(params, default_flow_style=False, sort_keys=False))
         shared_params = params['/**']['ros__parameters']
         # construct params for each node
         map_server_params = params['vox_nav_interactive_map_manager']['ros__parameters']
         planner_params = params['vox_nav_planner_server_rclcpp_node']['ros__parameters']
+        controller_params = params['vox_nav_controller_server_rclcpp_node']['ros__parameters']
 
     namespace = shared_params['namespace']
 
@@ -65,15 +66,15 @@ def launch_setup(context, *args, **kwargs):
         namespace=namespace,
         parameters=[shared_params, planner_params],
     )
-    # controller_server_node = Node(
-    #     package='vox_nav_control',
-    #     executable='vox_nav_controller_server',
-    #     name='vox_nav_controller_server_rclcpp_node',
-    #     namespace=namespace,
-    #     output='screen',
-    #     # prefix=['xterm -e gdb -ex run --args'],
-    #     parameters=[params],
-    # )
+    controller_server_node = Node(
+        package='vox_nav_control',
+        executable='vox_nav_controller_server',
+        name='vox_nav_controller_server_rclcpp_node',
+        namespace=namespace,
+        output='screen',
+        # prefix=['xterm -e gdb -ex run --args'],
+        parameters=[shared_params, controller_params],
+    )
     map_server_node = Node(
         package='vox_nav_map_server',
         executable='interactive_map_manager_node',
@@ -83,23 +84,23 @@ def launch_setup(context, *args, **kwargs):
         # prefix=['xterm -e gdb -ex run --args'],
         parameters=[shared_params, map_server_params],
     )
-    # navigate_to_pose_server_node = Node(
-    #     package='vox_nav_navigators',
-    #     executable='navigate_to_pose_server_node',
-    #     name='navigate_to_pose_server_node',
-    #     namespace=namespace,
-    #     output='screen',
-    #     # prefix=['xterm -e gdb -ex run --args'],
-    #     parameters=[params],
-    # )
-    # navigate_through_poses_server_node = Node(
-    #     package='vox_nav_navigators',
-    #     executable='navigate_through_poses_server_node',
-    #     name='navigate_through_poses_server_node',
-    #     namespace=namespace,
-    #     output='screen',
-    #     parameters=[params],
-    # )
+    navigate_to_pose_server_node = Node(
+        package='vox_nav_navigators',
+        executable='navigate_to_pose_server_node',
+        name='navigate_to_pose_server_node',
+        namespace=namespace,
+        output='screen',
+        # prefix=['xterm -e gdb -ex run --args'],
+        parameters=[params],
+    )
+    navigate_through_poses_server_node = Node(
+        package='vox_nav_navigators',
+        executable='navigate_through_poses_server_node',
+        name='navigate_through_poses_server_node',
+        namespace=namespace,
+        output='screen',
+        parameters=[params],
+    )
     # navigate_through_gps_poses_server_node = Node(
     #     package='vox_nav_navigators',
     #     executable='navigate_through_gps_poses_server_node',
@@ -111,9 +112,9 @@ def launch_setup(context, *args, **kwargs):
 
     return [
         planner_server_node,
-        # controller_server_node,
+        controller_server_node,
         map_server_node,
-        # navigate_to_pose_server_node,
-        # navigate_through_poses_server_node,
+        navigate_to_pose_server_node,
+        navigate_through_poses_server_node,
         # navigate_through_gps_poses_server_node
     ]

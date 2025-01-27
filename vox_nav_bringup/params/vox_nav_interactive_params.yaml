@@ -2,14 +2,15 @@
   ros__parameters:
     namespace: "atlas"
     use_sim_time: true
-    
 
 vox_nav_planner_server_rclcpp_node:
   ros__parameters:
-    planner_plugin: "PolyTunnelPlanner"          # other options: "SE2Planner", "ElevationPlanner", "OptimalElevationPlanner"
+    map_frame_id: "map"                  # namespace will be appended
+    robot_frame_id: "base_link"          # namespace will be appended
+    planner_plugin: "SEPLanner"          # other options: "SE2Planner", "ElevationPlanner", "OptimalElevationPlanner"
     expected_planner_frequency: 1.0
-    planner_name: "LQRRRTStar"                            
-    planner_timeout: 35.0
+    planner_name: "CForest"                            
+    planner_timeout: 75.0
     interpolation_parameter: 0                         # set to 0 if you wanna disable interpolating and smooting, otherwise 25 is a good default value                    
     octomap_voxel_size: 0.4
     robot_body_dimens:
@@ -23,7 +24,7 @@ vox_nav_planner_server_rclcpp_node:
                                  #  ABITstar,AITstar,CForest,LBTRRT,SST,TRRT,SPARS,SPARStwo,FMT,AnytimePathShortening
       plugin: "vox_nav_planning::SE2Planner"         # CForest: Reccomended
       se2_space: "REEDS"                             # "DUBINS","REEDS", "SE2" ### PS. Use DUBINS OR REEDS for Ackermann
-      z_elevation: 1.5                               # Elevation of robot from ground plane, robot should not collide with plane                                      
+      z_elevation: 0.8                               # Elevation of robot from ground plane, robot should not collide with plane                                      
       rho: 2.5                                       # Curve radius form reeds and dubins only
       state_space_boundries: 
         minx: -100.0

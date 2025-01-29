@@ -92,7 +92,7 @@ def launch_setup(context, *args, **kwargs):
         namespace=namespace,
         output='screen',
         # prefix=['xterm -e gdb -ex run --args'],
-        parameters=[params],
+        parameters=[shared_params],
     )
     navigate_through_poses_server_node = Node(
         package='vox_nav_navigators',
@@ -100,7 +100,15 @@ def launch_setup(context, *args, **kwargs):
         name='navigate_through_poses_server_node',
         namespace=namespace,
         output='screen',
-        parameters=[params],
+        parameters=[shared_params],
+    )
+    plan_executor_node = Node(
+        package='vox_nav_utilities',
+        executable='plan_executor.py',
+        name='plan_executor',
+        namespace=namespace,
+        output='screen',
+        parameters=[shared_params],
     )
     # navigate_through_gps_poses_server_node = Node(
     #     package='vox_nav_navigators',
@@ -117,5 +125,6 @@ def launch_setup(context, *args, **kwargs):
         map_server_node,
         navigate_to_pose_server_node,
         navigate_through_poses_server_node,
+        plan_executor_node,
         # navigate_through_gps_poses_server_node
     ]

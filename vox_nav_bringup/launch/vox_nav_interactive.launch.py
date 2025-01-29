@@ -14,8 +14,7 @@
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
-from launch.actions import OpaqueFunction
-from launch.actions import DeclareLaunchArgument
+from launch.actions import DeclareLaunchArgument, OpaqueFunction
 
 import os
 import yaml
@@ -58,10 +57,12 @@ def launch_setup(context, *args, **kwargs):
 
     namespace = shared_params['namespace']
 
+    # The planner server node creates another node, I believe get_traversability_map_client_node. If you set a name,
+    # both nodes will have the same name causing a conflict.
     planner_server_node = Node(
         package='vox_nav_planning',
         executable='planner_server',
-        name='vox_nav_planner_server_rclcpp_node',
+        # name='vox_nav_planner_server_rclcpp_node',
         output='screen',
         namespace=namespace,
         parameters=[shared_params, planner_params],

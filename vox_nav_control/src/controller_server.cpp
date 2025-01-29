@@ -123,7 +123,7 @@ ControllerServer::ControllerServer()
   odom_frame_id_ = declare_parameter("odom_frame_id", "odom");
   robot_frame_id_ = declare_parameter("robot_frame_id", "base_link");
   std::string node_namespace = get_namespace();
-  if (node_namespace[0] == "/")
+  if (node_namespace[0] == '/')
   {
     node_namespace = node_namespace.substr(1);
   }

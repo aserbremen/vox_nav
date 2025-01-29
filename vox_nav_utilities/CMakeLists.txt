@@ -115,6 +115,9 @@ install(DIRECTORY include/
 install(DIRECTORY config launch
         DESTINATION share/${PROJECT_NAME})
 
+install(PROGRAMS scripts/plan_executor.py
+        DESTINATION lib/${PROJECT_NAME})
+
 ament_export_libraries(tf_helpers 
                         planner_helpers 
                         map_manager_helpers

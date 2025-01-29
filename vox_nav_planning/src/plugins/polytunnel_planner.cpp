@@ -46,6 +46,16 @@ namespace vox_nav_planning
 
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(parent->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+    map_frame_id_ = parent->get_parameter("map_frame_id").as_string();
+    robot_frame_id_ = parent->get_parameter("robot_frame_id").as_string();
+    std::string node_namespace = parent->get_namespace();
+    if (node_namespace[0] == '/') {
+      node_namespace = node_namespace.substr(1);
+    }
+    if (!node_namespace.empty()) {
+      map_frame_id_ = node_namespace + "/" + map_frame_id_;
+      robot_frame_id_ = node_namespace + "/" + robot_frame_id_;
+    }
 
     parent->declare_parameter(plugin_name + ".ref_traj_se2_space", "DUBINS");
     parent->declare_parameter(plugin_name + ".rho", 1.0);
@@ -129,7 +139,7 @@ namespace vox_nav_planning
 
     geometry_msgs::msg::PoseStamped curr_robot_pose;
     vox_nav_utilities::getCurrentPose(
-      curr_robot_pose, *tf_buffer_, "map", "base_link", transform_timeout_);
+      curr_robot_pose, *tf_buffer_, map_frame_id_, robot_frame_id_, transform_timeout_);
     pcl::PointXYZ robot_position(
       curr_robot_pose.pose.position.x,
       curr_robot_pose.pose.position.y,

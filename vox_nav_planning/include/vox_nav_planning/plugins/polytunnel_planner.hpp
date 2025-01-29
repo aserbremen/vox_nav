@@ -366,6 +366,8 @@ namespace vox_nav_planning
     std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
     // tf listner for tf transforms
     std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+    std::string map_frame_id_;
+    std::string robot_frame_id_;
 
     // OMPL utilities used fo path interpolation, to connect rows to each other
     ompl::base::StateSpacePtr state_space_;

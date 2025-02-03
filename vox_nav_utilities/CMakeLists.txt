@@ -38,9 +38,6 @@ find_package(visualization_msgs REQUIRED)
 find_package(PCL REQUIRED)
 find_package(vox_nav_msgs REQUIRED)
 
-# manually include OMPL include directories because the find_package(ompl) does not work
-set(OMPL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../../install/ompl/include/ompl-1.6")
-
 include_directories(include
                    ${OMPL_INCLUDE_DIRS}
                    ${PCL_INCLUDE_DIRS}

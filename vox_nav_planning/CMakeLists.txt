@@ -45,7 +45,6 @@ find_package(vox_nav_utilities REQUIRED)
 find_package(pcl_ros REQUIRED)
 find_package(pluginlib REQUIRED)
 
-set(OMPL_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/../../../install/ompl/include/ompl-1.6")
 include_directories(include
                    ${OMPL_INCLUDE_DIRS})
                    
@@ -95,6 +94,7 @@ ament_target_dependencies(se3_planner ${dependencies})
 target_link_libraries(se3_planner ${OCTOMAP_LIBRARIES} ${LIBFCL_LIBRARIES} ompl)
 
 # ELEVATION PLANNER ############################################
+message(ERROR "ompl_LIBRARIES ${ompl_LIBRARIES}")
 add_library(elevation_planner SHARED src/plugins/elevation_planner.cpp)
 ament_target_dependencies(elevation_planner ${dependencies})
 target_link_libraries(elevation_planner ${OCTOMAP_LIBRARIES} ${LIBFCL_LIBRARIES} ompl)
